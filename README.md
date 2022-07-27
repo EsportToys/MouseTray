@@ -1,7 +1,9 @@
 # MouseTray
 A simple tray app to quickly adjust Windows cursor speed.
 
-![image](https://user-images.githubusercontent.com/98432183/181273323-1579273d-1832-4a2d-b85f-e282a2a407b3.png)
+![image](https://user-images.githubusercontent.com/98432183/181279702-375a2176-3200-4ac0-95c3-1753e22ff37b.png)
+
+![image](https://user-images.githubusercontent.com/98432183/181279955-0e0df2ca-0a73-4c7f-8497-b08529bae8e8.png)
 
 ## Use Cases
 - Swap between speeds for navigation/handwriting/drawing.
