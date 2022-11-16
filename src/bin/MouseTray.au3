@@ -195,10 +195,10 @@ GUICtrlSetLimit($hSlider, 20, 1)
 GUICtrlSetData($hSlider, 10)
 PopulateTicks($hSlider)
 
-GUICtrlSetState($hInput, 128)
-GUICtrlSetState($hSlider, 128)
-GUICtrlSetState($hChkBox, 128)
-GUICtrlSetState($hDelete, 128)
+GUICtrlSetState($hInput, 128)  ; $GUI_DISABLE
+GUICtrlSetState($hSlider, 128) ; $GUI_DISABLE
+GUICtrlSetState($hChkBox, 128) ; $GUI_DISABLE
+GUICtrlSetState($hDelete, 128) ; $GUI_DISABLE
 
 
             GUICtrlSetOnEvent($hInput,onEventRenameProfile)
@@ -218,8 +218,8 @@ GUICtrlSetState($hDelete, 128)
             GUICtrlSendMsg($hListView, 4126, 3, 48)
 ;            GUICtrlSendMsg($hListView, 4126, 0, 336)
 ;            GUICtrlSendMsg($hListView, 4126, 1, 0)
-            GUICtrlSetState($aProfiles[0][3],256) 
-            GUICtrlSetState($hListView,256) 
+            GUICtrlSetState($aProfiles[0][3],256) ; $GUI_FOCUS
+            GUICtrlSetState($hListView,256) ; $GUI_FOCUS
 
             GUICtrlCreateTabItem("")
             GUISetState()
