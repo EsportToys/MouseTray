@@ -7,6 +7,7 @@ Opt("TrayOnEventMode", 1)
 Opt("TrayMenuMode", 3) ; no default, and don't autocheck
 Opt("TrayAutoPause", 0)
 Opt("TrayIconHide", 0)
+; Opt("TrayIconDebug", 1)
 TraySetClick ( 16 )
 TraySetOnEvent ( -7 , OnTrayMB1Down )
 TraySetOnEvent ( -11, OnTrayHover )
@@ -219,14 +220,6 @@ GUICtrlSetState($hDelete, 128)
 ;            GUICtrlSendMsg($hListView, 4126, 1, 0)
             GUICtrlSetState($aProfiles[0][3],256) 
             GUICtrlSetState($hListView,256) 
-
-            GUICtrlCreateTabItem("Devices")
-
-            GUICtrlCreateButton("Save",$w-82,$h-30,75,23)
-            GUICtrlCreateButton("Cancel",$w-82-81,$h-30,75,23)
-            GUICtrlSetOnEvent(-1,CLOSEButton)
-            GUICtrlCreateButton("Delete",$w-163-81,$h-30,75,23)
-            GUICtrlCreateButton("New",$w-244-81,$h-30,75,23)
 
             GUICtrlCreateTabItem("")
             GUISetState()
