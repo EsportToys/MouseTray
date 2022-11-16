@@ -152,7 +152,7 @@ Func SingletonProfiles($cmd,$arg=Null)
 EndFunc
 
 Func SingletonOptions($cmd, $arg=Null)
-     Local Static $hWnd, $hInput, $hSlider, $hChkBox, $hListView, $hDelete, $aProfiles, $aDevices
+     Local Static $hWnd, $hInput, $hSlider, $hChkBox, $hListView, $hDelete, $aProfiles
      Local Static $lastIndex = 0, $lastString = ''
      Switch $cmd
        Case 'open'
@@ -223,11 +223,6 @@ GUICtrlSetState($hDelete, 128) ; $GUI_DISABLE
             Local $stub = GUICtrlCreateDummy()
             Local $arr = [ ['{UP}',$stub],['{DOWN}',$stub],['{PGUP}',$stub],['{PGDN}',$stub] ]
             GUISetAccelerators ( $arr )
-       Case 'detect'
-            Local $newIndex = UBound($aDevices)
-            ReDim $aDevices[$newIndex+1][2]
-            $aDevices[$newIndex][0] = $arg ; handle? or name?
-            $aDevices[$newIndex][1] = 'default'
        Case 'create'
             Local $newIndex = UBound($aProfiles)
             Local $newNum = $newIndex
