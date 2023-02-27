@@ -24,19 +24,11 @@ GUIRegisterMsg(0x0006, WM_ACTIVATE)
 GUIRegisterMsg(0x0114, WM_HSCROLL)
 GUIRegisterMsg(0x020A, WM_MOUSEWHEEL)
 
-Main()
-
-Func Main()
-    While Sleep(1000)
-    WEnd
-EndFunc
+While Sleep(1000)
+WEnd
 
 Func LostFocus($hWnd)
     SingletonPopup($hWnd,0x0006,0) ; WM_ACTIVATE
-EndFunc
-
-Func ShowPreferences()
-    SingletonOptions('open')
 EndFunc
 
 Func OnTrayMB1Down()
@@ -160,69 +152,58 @@ Func SingletonOptions($cmd, $arg=Null)
                GUISetState(@SW_RESTORE,$hWnd) 
                Local $pos = WinGetPos($hWnd)
                WinMove($hWnd,'',(@DesktopWidth-$pos[2])/2,(@DesktopHeight-$pos[3])/2)
-               Return 
+            Else
+               Local $w = 400, $h = 424
+               $aProfiles = SingletonProfiles('query')
+               ReDim $aProfiles[UBound($aProfiles)][4]
+               $hWnd = GUICreate('Preferences',$w,$h,-1,-1,0x00C00000,0x00000080) ; WS_CAPTION and WS_EX_TOOLWINDOW
+               GUICtrlCreateTab ( 8, 8, $w-16+2, $h-44 )
+               GUICtrlCreateTabItem('Profiles')            
+                  GUICtrlSetOnEvent(GUICtrlCreateButton('Save',$w-82,$h-30,75,23),onEventListApply)
+                  GUICtrlSetOnEvent(GUICtrlCreateButton('Cancel',$w-82-81,$h-30,75,23),CLOSEButton)
+                  GUICtrlSetOnEvent(GUICtrlCreateButton('New',$w-244-81,$h-30,75,23),onEventCreateProfile)
+                  GUICtrlCreateGroup ( 'Default value for', 21, 40, 357, 99, 0x50000007, 0x00000004 )
+                  GUICtrlCreateLabel ( 'Slow',73,89,26,15,0x50020002,0x00000004 )
+                  GUICtrlCreateLabel ( 'Fast',225,89,24,15,0x50020000,0x00000004 )
+                  GUICtrlCreateIcon ( 'accOn.ico', 1, 30, 61)
+                  $hInput  = GUICtrlCreateInput ( $DEFAULT_PROFILE_NAME , 70,58,184,19)
+                  $hChkBox = GUICtrlCreateCheckbox('&Enable pointer acceleration',73,116,227,16)
+                  $hSlider = GUICtrlCreateSlider(102,82,120,26,0x0500) ; TBS_TOOLTIPS+TBS_DOWNISLEFT
+                  $hDelete = GUICtrlCreateButton('Delete',$w-163-81,$h-30,75,23)
+                  GUICtrlSetBkColor($hSlider,0xFFFFFF)
+                  GUICtrlSetLimit($hSlider, 20, 1)
+                  GUICtrlSetData($hSlider, 10)
+                  PopulateTicks($hSlider)
+                  GUICtrlSetState($hInput, 128)  ; $GUI_DISABLE
+                  GUICtrlSetState($hSlider, 128) ; $GUI_DISABLE
+                  GUICtrlSetState($hChkBox, 128) ; $GUI_DISABLE
+                  GUICtrlSetState($hDelete, 128) ; $GUI_DISABLE
+                  GUICtrlSetOnEvent($hInput, onEventRenameProfile)
+                  GUICtrlSetOnEvent($hSlider,onEventUpdateProfile)
+                  GUICtrlSetOnEvent($hChkBox,onEventUpdateProfile)
+                  GUICtrlSetOnEvent($hDelete,onEventDeleteProfile)
+                  $hListView = GUICtrlCreateListView('Name|Speed|Accel|Factor',21,150,357,224,0x800C)
+                  For $i = 0 to UBound($aProfiles)-1
+                      Local $str = $aProfiles[$i][0]
+                      Local $opt = $aProfiles[$i][1]
+                      Local $spd = DllStructGetData($opt,'speed')
+                      Local $acc = DllStructGetData($opt,'accel')
+                      Local $fac = CalculateMultiplier($spd,$acc)
+                      $aProfiles[$i][3] = GUICtrlCreateListViewItem($str & '|' & $spd & '|' & $acc & '|' & $fac, $hListView)
+                       GUICtrlSetOnEvent($aProfiles[$i][3],onEventListSelect)
+                  Next
+                  GUICtrlSendMsg($hListView, 4126, 0, 192) ; width of name field to 192px
+                  GUICtrlSendMsg($hListView, 4126, 1, 48)  ; width of speed field to 48px
+                  GUICtrlSendMsg($hListView, 4126, 2, 48)  ; width of accel field to 48px
+                  GUICtrlSendMsg($hListView, 4126, 3, 48)  ; width of multi field to 48px
+                  GUICtrlSetState($aProfiles[0][3],256) ; $GUI_FOCUS on the first listview item
+                  GUICtrlSetState($hListView,256)       ; $GUI_FOCUS on the listview itself
+               GUICtrlCreateTabItem('')
+               GUISetState()
+               Local $stub = GUICtrlCreateDummy()
+               Local $arr = [ ['{UP}',$stub],['{DOWN}',$stub],['{PGUP}',$stub],['{PGDN}',$stub] ]
+               GUISetAccelerators ( $arr )
             EndIf
-            Local $w = 400, $h = 424
-            $aProfiles = SingletonProfiles('query')
-            ReDim $aProfiles[UBound($aProfiles)][4]
-
-            ; don't make it a taskbar child as it covers up other dialogs.
-            $hWnd = GUICreate('Preferences',$w,$h,-1,-1,0x00C00000,0x00000080) ; WS_CAPTION and WS_EX_TOOLWINDOW
-            GUICtrlCreateTab ( 8, 8, $w-16+2, $h-44 )
-            GUICtrlCreateTabItem('Profiles')
-
-            GUICtrlCreateButton('Save',$w-82,$h-30,75,23)
-            GUICtrlSetOnEvent(-1,onEventListApply)
-            GUICtrlCreateButton('Cancel',$w-82-81,$h-30,75,23)
-            GUICtrlSetOnEvent(-1,CLOSEButton)
-            $hDelete = GUICtrlCreateButton('Delete',$w-163-81,$h-30,75,23)
-            GUICtrlSetOnEvent(-1,onEventDeleteProfile)
-            GUICtrlCreateButton('New',$w-244-81,$h-30,75,23)
-            GUICtrlSetOnEvent(-1,onEventCreateProfile)
-
-GUICtrlCreateGroup ( 'Default value for', 21, 40, 357, 99, 0x50000007, 0x00000004 )
-GUICtrlCreateLabel ( 'Slow',73,89,26,15,0x50020002,0x00000004 )
-GUICtrlCreateLabel ( 'Fast',225,89,24,15,0x50020000,0x00000004 )
-GUICtrlCreateIcon ( 'accOn.ico', 1, 30, 61)
-$hInput = GUICtrlCreateInput ( $DEFAULT_PROFILE_NAME , 70,58,184,19)
-$hChkBox = GUICtrlCreateCheckbox('&Enable pointer acceleration',73,116,227,16)
-$hSlider = GUICtrlCreateSlider(102,82,120,26,0x0500) ; TBS_TOOLTIPS+TBS_DOWNISLEFT
-GUICtrlSetBkColor($hSlider,0xFFFFFF)
-GUICtrlSetLimit($hSlider, 20, 1)
-GUICtrlSetData($hSlider, 10)
-PopulateTicks($hSlider)
-
-GUICtrlSetState($hInput, 128)  ; $GUI_DISABLE
-GUICtrlSetState($hSlider, 128) ; $GUI_DISABLE
-GUICtrlSetState($hChkBox, 128) ; $GUI_DISABLE
-GUICtrlSetState($hDelete, 128) ; $GUI_DISABLE
-
-
-            GUICtrlSetOnEvent($hInput,onEventRenameProfile)
-            GUICtrlSetOnEvent($hSlider,onEventUpdateProfile)
-            GUICtrlSetOnEvent($hChkBox,onEventUpdateProfile)
-
-
-            $hListView = GUICtrlCreateListView('Name|Speed|Accel|Factor',21,150,357,224,0x800C)
-            For $i = 0 to UBound($aProfiles)-1
-                Local $_ = $aProfiles[$i][1]
-                $aProfiles[$i][3] = GUICtrlCreateListViewItem( $aProfiles[$i][0] & '|' & $_.speed & '|' & $_.accel & '|' & CalculateMultiplier($_.speed,$_.accel) , $hListView )
-                GUICtrlSetOnEvent($aProfiles[$i][3],onEventListSelect)
-            Next
-            GUICtrlSendMsg($hListView, 4126, 0, 192)
-            GUICtrlSendMsg($hListView, 4126, 1, 48)
-            GUICtrlSendMsg($hListView, 4126, 2, 48)
-            GUICtrlSendMsg($hListView, 4126, 3, 48)
-;            GUICtrlSendMsg($hListView, 4126, 0, 336)
-;            GUICtrlSendMsg($hListView, 4126, 1, 0)
-            GUICtrlSetState($aProfiles[0][3],256) ; $GUI_FOCUS
-            GUICtrlSetState($hListView,256)       ; $GUI_FOCUS
-
-            GUICtrlCreateTabItem('')
-            GUISetState()
-            Local $stub = GUICtrlCreateDummy()
-            Local $arr = [ ['{UP}',$stub],['{DOWN}',$stub],['{PGUP}',$stub],['{PGDN}',$stub] ]
-            GUISetAccelerators ( $arr )
        Case 'create'
             Local $newIndex = UBound($aProfiles)
             Local $newNum = $newIndex
@@ -334,7 +315,7 @@ GUICtrlSetState($hDelete, 128) ; $GUI_DISABLE
      EndSwitch
 EndFunc
 
-Func SingletonTray($msg=Null)
+Func SingletonTray()
     Local Static $init = True
     Local Static $tray = [ _
         TrayCreateItem ( 'Enable wheel shortcuts' ), _
@@ -356,13 +337,6 @@ Func SingletonTray($msg=Null)
        TrayItemSetOnEvent (TrayCreateItem('Touchpad',$tray[$n-3]), OpenUwpTouchpad )
        TrayItemSetOnEvent ($tray[$n-1], ExitApp )
     EndIf
-#cs
-    If $msg Then
-        Switch $msg
-          Case Else
-        EndSwitch
-    EndIf
-#ce
 EndFunc
 
 Func SingletonPopup($hWnd=Null, $iMsg=Null, $iwParam=Null, $ilParam=Null)
@@ -501,23 +475,23 @@ Func WM_INPUT($hWnd, $iMsg, $iwParam, $ilParam)
      If $iwParam Then Return 0    
 EndFunc
 
-Func WM_ACTIVATE($hWnd, $iMsg, $iwParam, $ilParam)
-    if Not $iwParam then LostFocus($hWnd)
-    Return 'GUI_RUNDEFMSG'
+Func WM_ACTIVATE($h, $m, $w, $l)
+     if Not $w then LostFocus($h)
+     Return 'GUI_RUNDEFMSG'
 EndFunc
 
-Func WM_HSCROLL($hWnd, $iMsg, $iwParam, $ilParam)
-    SingletonPopup($hWnd, $iMsg, $iwParam, $ilParam)
-    Return 'GUI_RUNDEFMSG'
+Func WM_HSCROLL($h, $m, $w, $l)
+     SingletonPopup($h, $m, $w, $l)
+     Return 'GUI_RUNDEFMSG'
 EndFunc
 
-Func WM_MOUSEWHEEL($hWnd, $iMsg, $iwParam, $ilParam)
-    SingletonPopup($hWnd, $iMsg, $iwParam, $ilParam)
-    Return 'GUI_RUNDEFMSG'
+Func WM_MOUSEWHEEL($h, $m, $w, $l)
+     SingletonPopup($h, $m, $w, $l)
+     Return 'GUI_RUNDEFMSG'
 EndFunc
 
 Func CloseButton()
-    GUIDelete( @GUI_WinHandle )
+     GUIDelete(@GUI_WinHandle)
 EndFunc
 
 Func ExitApp()
@@ -536,90 +510,90 @@ Func ToggleShortcuts()
 EndFunc
 
 Func OpenCplMouse()
-    ShellExecute ( 'main.cpl' )
+     ShellExecute ( 'main.cpl' )
 EndFunc
 
 Func OpenCplKeyboard()
-    ShellExecute ( 'main.cpl' , 'keyboard' )
+     ShellExecute ( 'main.cpl' , 'keyboard' )
 EndFunc
 
 Func OpenUwpMouse()
-    ShellExecute ( 'ms-settings:mousetouchpad' )
+     ShellExecute ( 'ms-settings:mousetouchpad' )
 EndFunc
 
 Func OpenUwpTouchpad()
-    ShellExecute ( 'ms-settings:devices-touchpad' )
+     ShellExecute ( 'ms-settings:devices-touchpad' )
 EndFunc
 
 Func OpenToolPrefs()
-    ShowPreferences()
+     SingletonOptions('open')
 EndFunc
 
 Func Refresh()
-    SingletonPopup(False)
+     SingletonPopup(False)
 EndFunc
 
 Func ReFocus()
-    SingletonPopup(True)
+     SingletonPopup(True)
 EndFunc
 
 Func onDropdnEvent()
-    SingletonProfiles('select',GUICtrlRead(@GUI_CtrlID))
+     SingletonProfiles('select',GUICtrlRead(@GUI_CtrlID))
 EndFunc
 
 Func onAccIcoEvent()
-    Local $enable = not GetPtrAccel()
-    If $enable Then
+     Local $enable = not GetPtrAccel()
+     If $enable Then
         EnablePointerAccel()
-    Else
+     Else
         DisablePointerAccel()
-    EndIf
+     EndIf
 EndFunc
 
 Func onEventAccelerator()
-    AcceleratorCallbacks(GUICtrlRead(@GUI_CtrlId))
+     AcceleratorCallbacks(GUICtrlRead(@GUI_CtrlId))
 EndFunc
 
 Func onEventListSelect()
-    SingletonOptions('select',@GUI_CtrlId)
+     SingletonOptions('select',@GUI_CtrlId)
 EndFunc
 
 Func onEventListApply()
-    SingletonOptions('apply',@GUI_CtrlId)
+     SingletonOptions('apply',@GUI_CtrlId)
 EndFunc
 
 Func onEventCreateProfile()
-    SingletonOptions('create')
+     SingletonOptions('create')
 EndFunc
 
 Func onEventDeleteProfile()
-    SingletonOptions('delete')
+     SingletonOptions('delete')
 EndFunc
 
 Func onEventRenameProfile()
-    SingletonOptions('rename')
+     SingletonOptions('rename')
 EndFunc
 
 Func onEventUpdateProfile()
-    SingletonOptions('update')
+     SingletonOptions('update')
 EndFunc
 
 Func IncrementPointerSpeed()
-    AcceleratorCallbacks('=')
+     AcceleratorCallbacks('=')
 EndFunc
 
 Func DecrementPointerSpeed()
-    AcceleratorCallbacks('-')
+     AcceleratorCallbacks('-')
 EndFunc
 
 Func EnablePointerAccel()
-    SetPtrAccel(1,6,10)
-    Refresh()
+     SetPtrAccel(1,6,10)
+     Refresh()
 EndFunc
 
 Func DisablePointerAccel()
-    SetPtrAccel(0,0,0)
-    Refresh()
+     SetPtrAccel(0,0,0)
+     Refresh()
 EndFunc
 
 Func GetPtrSpeed()
@@ -631,32 +605,32 @@ Func SetPtrSpeed($val, $flag=1)
 EndFunc
 
 Func GetPtrAccel($advanced=False)
-     Local $retval, $struct = DllCall($user32dll, 'bool', 'SystemParametersInfoW', 'uint', 0x0003, 'uint', 0, 'struct*', DllStructCreate('uint thresh1;uint thresh2;uint accel'), 'uint', 0)[3]
+     Local $_ = DllCall($user32dll, 'bool', 'SystemParametersInfoW', 'uint', 0x0003, 'uint', 0, 'struct*', DllStructCreate('uint t1;uint t2;uint a'), 'uint', 0)[3]
      If $advanced Then 
-        Local $arr = [$struct.accel,$struct.thresh1,$struct.thresh2]
+        Local $arr = [$_.a,$_.t1,$_.t2]
         Return $arr
      Else
-        Return $struct.accel
+        Return $_.a
      EndIf
 EndFunc
 
 Func SetPtrAccel($accel,$thresh1,$thresh2,$flag=1)
-     Local $struct = DllStructCreate('uint thresh1;uint thresh2;uint accel')
-     $struct.thresh1 = $thresh1
-     $struct.thresh2 = $thresh2
-     $struct.accel   = $accel
-     DllCall($user32dll, 'bool', 'SystemParametersInfoW', 'uint', 0x0004, 'uint', 0, 'struct*', $struct, 'uint', $flag)
+     Local $_ = DllStructCreate('uint t1;uint t2;uint a')
+     DllStructSetData($_ , 't1' , $thresh1)
+     DllStructSetData($_ , 't2' , $thresh2)
+     DllStructSetData($_ , 'a'  , $accel)
+     DllCall($user32dll, 'bool', 'SystemParametersInfoW', 'uint', 0x0004, 'uint', 0, 'struct*', $_, 'uint', $flag)
 EndFunc
 
-Func CalculateMultiplier($speed=GetPtrSpeed(),$accel=GetPtrAccel())
-    if $accel    then return ( $speed=10 ? '1.0' : $speed/10 )
-    if $speed<3  then return '1/' & 32/$speed
-    if $speed<10 then return $speed-2 & '/8'
-    return $speed/4 - 1.5
+Func CalculateMultiplier($spd=GetPtrSpeed(),$acc=GetPtrAccel())
+    if $acc    then return ( $spd=10 ? '1.0' : $spd/10 )
+    if $spd<3  then return '1/' & 32/$spd
+    if $spd<10 then return $spd-2 & '/8'
+    return $spd/4 - 1.5
 EndFunc
 
 Func PopupAccelerators()
-    Local $arr = [ _
+    Local $a = [ _
         ["`",      GUICtrlCreateDummy()], _
         ["1",      GUICtrlCreateDummy()], _
         ["2",      GUICtrlCreateDummy()], _
@@ -686,11 +660,11 @@ Func PopupAccelerators()
         ["+{END}" ,GUICtrlCreateDummy()], _
         ["+{DEL}", GUICtrlCreateDummy()]  _
     ]
-    For $i=0 to UBound($arr)-1
-        GUICtrlSetData($arr[$i][1],$arr[$i][0])
-        GUICtrlSetOnEvent($arr[$i][1],onEventAccelerator)
+    For $i=0 to UBound($a)-1
+        GUICtrlSetData($a[$i][1],$a[$i][0])
+        GUICtrlSetOnEvent($a[$i][1],onEventAccelerator)
     Next
-    Return $arr
+    Return $a
 EndFunc
 
 Func AcceleratorCallbacks($str)
@@ -793,16 +767,16 @@ Func AcceleratorCallbacks($str)
     EndSwitch
 EndFunc
 
-Func PopulateTicks($hSlider)
-     DllCall($user32dll, "lresult", "SendMessage", "hwnd", GUICtrlGetHandle($hSlider), "uint", 0x404, "wparam", 0, "lparam", 2)
-     DllCall($user32dll, "lresult", "SendMessage", "hwnd", GUICtrlGetHandle($hSlider), "uint", 0x404, "wparam", 0, "lparam", 4)
-     DllCall($user32dll, "lresult", "SendMessage", "hwnd", GUICtrlGetHandle($hSlider), "uint", 0x404, "wparam", 0, "lparam", 6)
-     DllCall($user32dll, "lresult", "SendMessage", "hwnd", GUICtrlGetHandle($hSlider), "uint", 0x404, "wparam", 0, "lparam", 8)
-     DllCall($user32dll, "lresult", "SendMessage", "hwnd", GUICtrlGetHandle($hSlider), "uint", 0x404, "wparam", 0, "lparam", 10)
-     DllCall($user32dll, "lresult", "SendMessage", "hwnd", GUICtrlGetHandle($hSlider), "uint", 0x404, "wparam", 0, "lparam", 12)
-     DllCall($user32dll, "lresult", "SendMessage", "hwnd", GUICtrlGetHandle($hSlider), "uint", 0x404, "wparam", 0, "lparam", 14)
-     DllCall($user32dll, "lresult", "SendMessage", "hwnd", GUICtrlGetHandle($hSlider), "uint", 0x404, "wparam", 0, "lparam", 16)
-     DllCall($user32dll, "lresult", "SendMessage", "hwnd", GUICtrlGetHandle($hSlider), "uint", 0x404, "wparam", 0, "lparam", 18)
+Func PopulateTicks($h)
+     GUICtrlSendMsg($h,0x404,0,2)
+     GUICtrlSendMsg($h,0x404,0,4)
+     GUICtrlSendMsg($h,0x404,0,6)
+     GUICtrlSendMsg($h,0x404,0,8)
+     GUICtrlSendMsg($h,0x404,0,10)
+     GUICtrlSendMsg($h,0x404,0,12)
+     GUICtrlSendMsg($h,0x404,0,14)
+     GUICtrlSendMsg($h,0x404,0,16)
+     GUICtrlSendMsg($h,0x404,0,18)
 EndFunc
 
 ; #FUNCTION# ====================================================================================================================
